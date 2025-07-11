@@ -22,29 +22,27 @@ import { TaskStatus } from "../domain/TaskStatus";
 
 const TaskListScreen: React.FC = () => {
   const { state, api } = useAppContext();
-  const { listId } = useParams<{ listId: string }>(); // Explicitly type listId as string
+  const { listId } = useParams<{ listId: string }>(); // Type listId as string
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Find task list directly from state instead of maintaining separate state
+  // Find task list directly from state
   const taskList = state.taskLists.find((tl) => listId === tl.id);
 
-  // Single useEffect to handle all initial data loading
+  // Single useEffect to handle initial data loading
   useEffect(() => {
     const loadInitialData = async () => {
       if (!listId) {
+        console.error("listId is undefined");
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       try {
-        // Only fetch if we don't already have the task list
         if (!taskList) {
           await api.getTaskList(listId);
         }
-
-        // Attempt to fetch tasks - this may 404 but we'll try anyway
         try {
           await api.fetchTasks(listId);
         } catch (error) {
@@ -58,9 +56,9 @@ const TaskListScreen: React.FC = () => {
     };
 
     loadInitialData();
-  }, [listId, taskList, api]); // Include taskList and api in dependencies
+  }, [listId, taskList, api]);
 
-  // Calculate completion percentage based on tasks
+  // Calculate completion percentage
   const completionPercentage = React.useMemo(() => {
     if (listId && state.tasks[listId]) {
       const tasks = state.tasks[listId];
@@ -82,8 +80,8 @@ const TaskListScreen: React.FC = () => {
       task.status === TaskStatus.CLOSED ? TaskStatus.OPEN : TaskStatus.CLOSED;
 
     api
-      .updateTask(listId, task.id, updatedTask)
-      .then(() => api.fetchTasks(listId))
+      .updateTask(listId!, task.id!, updatedTask) // Line ~83: Use non-null assertion
+      .then(() => api.fetchTasks(listId!))
       .catch((error) => console.error("Error updating task:", error));
   };
 
@@ -92,8 +90,12 @@ const TaskListScreen: React.FC = () => {
       console.error("listId is undefined");
       return;
     }
-    await api.deleteTaskList(listId);
-    navigate("/");
+    try {
+      await api.deleteTaskList(listId);
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting task list:", error);
+    }
   };
 
   const tableRows = () => {
@@ -140,9 +142,8 @@ const TaskListScreen: React.FC = () => {
                   console.error("listId is undefined");
                   return;
                 }
-                api.deleteTask(listId, task.id).catch((error) =>
-                  console.error("Error deleting task:", error)
-                );
+                api.deleteTask(listId!, task.id!) // Line ~145: Use non-null assertion
+                  .catch((error) => console.error("Error deleting task:", error));
               }}
               aria-label={`Delete task "${task.title}"`}
             >
