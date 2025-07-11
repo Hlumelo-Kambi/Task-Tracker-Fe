@@ -38,6 +38,10 @@ const DELETE_TASK = "DELETE_TASK";
 // API Base URL - Fixed for Vite
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('Full URL:', `${API_BASE_URL}/api/task-lists`);
+console.log(import.meta.env.VITE_API_URL);
+
 // Reducer
 const reducer = (state: AppState, action: Action): AppState => {
   switch (action.type) {
@@ -277,6 +281,3 @@ export const useAppContext = (): AppContextType => {
   return context;
 };
 
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('Full URL:', `${API_BASE_URL}/api/task-lists`);
-console.log(import.meta.env.VITE_API_URL);
