@@ -174,92 +174,187 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const jsonHeaders = {
     headers: { "Content-Type": "application/json" },
+    withCredentials: true, // Include credentials for CORS
+    timeout: 10000, // 10-second timeout to prevent long requests
   };
 
   // API calls
   const api: AppContextType["api"] = {
     fetchTaskLists: async () => {
-      const response = await axios.get<TaskList[]>(
-        `${API_BASE_URL}/api/task-lists`,
-        jsonHeaders
-      );
-      dispatch({ type: FETCH_TASKLISTS, payload: response.data });
+      try {
+        console.log('Fetching task lists from:', `${API_BASE_URL}/api/task-lists`);
+        const response = await axios.get<TaskList[]>(
+          `${API_BASE_URL}/api/task-lists`,
+          jsonHeaders
+        );
+        console.log('Task lists response:', response.data);
+        dispatch({ type: FETCH_TASKLISTS, payload: response.data });
+      } catch (error: any) {
+        console.error('Error fetching task lists:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers,
+        });
+        throw error;
+      }
     },
     getTaskList: async (id: string) => {
-      const response = await axios.get<TaskList>(
-        `${API_BASE_URL}/api/task-lists/${id}`,
-        jsonHeaders
-      );
-      dispatch({ type: GET_TASKLIST, payload: response.data });
+      try {
+        const response = await axios.get<TaskList>(
+          `${API_BASE_URL}/api/task-lists/${id}`,
+          jsonHeaders
+        );
+        dispatch({ type: GET_TASKLIST, payload: response.data });
+      } catch (error: any) {
+        console.error('Error getting task list:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     createTaskList: async (taskList) => {
-      const response = await axios.post<TaskList>(
-        `${API_BASE_URL}/api/task-lists`,
-        taskList,
-        jsonHeaders
-      );
-      dispatch({ type: CREATE_TASKLIST, payload: response.data });
+      try {
+        const response = await axios.post<TaskList>(
+          `${API_BASE_URL}/api/task-lists`,
+          taskList,
+          jsonHeaders
+        );
+        dispatch({ type: CREATE_TASKLIST, payload: response.data });
+      } catch (error: any) {
+        console.error('Error creating task list:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     getTask: async (taskListId: string, taskId: string) => {
-      const response = await axios.get<Task>(
-        `${API_BASE_URL}/api/task-lists/${taskListId}/tasks/${taskId}`,
-        jsonHeaders
-      );
-      dispatch({
-        type: GET_TASK,
-        payload: { taskListId, task: response.data },
-      });
+      try {
+        const response = await axios.get<Task>(
+          `${API_BASE_URL}/api/task-lists/${taskListId}/tasks/${taskId}`,
+          jsonHeaders
+        );
+        dispatch({
+          type: GET_TASK,
+          payload: { taskListId, task: response.data },
+        });
+      } catch (error: any) {
+        console.error('Error getting task:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     updateTaskList: async (id, taskList) => {
-      const response = await axios.put<TaskList>(
-        `${API_BASE_URL}/api/task-lists/${id}`,
-        taskList,
-        jsonHeaders
-      );
-      dispatch({ type: UPDATE_TASKLIST, payload: response.data });
+      try {
+        const response = await axios.put<TaskList>(
+          `${API_BASE_URL}/api/task-lists/${id}`,
+          taskList,
+          jsonHeaders
+        );
+        dispatch({ type: UPDATE_TASKLIST, payload: response.data });
+      } catch (error: any) {
+        console.error('Error updating task list:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     deleteTaskList: async (id) => {
-      await axios.delete(`${API_BASE_URL}/api/task-lists/${id}`, jsonHeaders);
-      dispatch({ type: DELETE_TASKLIST, payload: id });
+      try {
+        await axios.delete(`${API_BASE_URL}/api/task-lists/${id}`, jsonHeaders);
+        dispatch({ type: DELETE_TASKLIST, payload: id });
+      } catch (error: any) {
+        console.error('Error deleting task list:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     fetchTasks: async (taskListId) => {
-      const response = await axios.get<Task[]>(
-        `${API_BASE_URL}/api/task-lists/${taskListId}/tasks`,
-        jsonHeaders
-      );
-      dispatch({
-        type: FETCH_TASKS,
-        payload: { taskListId, tasks: response.data },
-      });
+      try {
+        const response = await axios.get<Task[]>(
+          `${API_BASE_URL}/api/task-lists/${taskListId}/tasks`,
+          jsonHeaders
+        );
+        dispatch({
+          type: FETCH_TASKS,
+          payload: { taskListId, tasks: response.data },
+        });
+      } catch (error: any) {
+        console.error('Error fetching tasks:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     createTask: async (taskListId, task) => {
-      const response = await axios.post<Task>(
-        `${API_BASE_URL}/api/task-lists/${taskListId}/tasks`,
-        task,
-        jsonHeaders
-      );
-      dispatch({
-        type: CREATE_TASK,
-        payload: { taskListId, task: response.data },
-      });
+      try {
+        const response = await axios.post<Task>(
+          `${API_BASE_URL}/api/task-lists/${taskListId}/tasks`,
+          task,
+          jsonHeaders
+        );
+        dispatch({
+          type: CREATE_TASK,
+          payload: { taskListId, task: response.data },
+        });
+      } catch (error: any) {
+        console.error('Error creating task:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     updateTask: async (taskListId, taskId, task) => {
-      const response = await axios.put<Task>(
-        `${API_BASE_URL}/api/task-lists/${taskListId}/tasks/${taskId}`,
-        task,
-        jsonHeaders
-      );
-      dispatch({
-        type: UPDATE_TASK,
-        payload: { taskListId, taskId, task: response.data },
-      });
+      try {
+        const response = await axios.put<Task>(
+          `${API_BASE_URL}/api/task-lists/${taskListId}/tasks/${taskId}`,
+          task,
+          jsonHeaders
+        );
+        dispatch({
+          type: UPDATE_TASK,
+          payload: { taskListId, taskId, task: response.data },
+        });
+      } catch (error: any) {
+        console.error('Error updating task:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
     deleteTask: async (taskListId, taskId) => {
-      await axios.delete(
-        `${API_BASE_URL}/api/task-lists/${taskListId}/tasks/${taskId}`,
-        jsonHeaders
-      );
-      dispatch({ type: DELETE_TASK, payload: { taskListId, taskId } });
+      try {
+        await axios.delete(
+          `${API_BASE_URL}/api/task-lists/${taskListId}/tasks/${taskId}`,
+          jsonHeaders
+        );
+        dispatch({ type: DELETE_TASK, payload: { taskListId, taskId } });
+      } catch (error: any) {
+        console.error('Error deleting task:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        throw error;
+      }
     },
   };
 
@@ -280,4 +375,3 @@ export const useAppContext = (): AppContextType => {
   }
   return context;
 };
-
