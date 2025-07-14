@@ -22,26 +22,27 @@ import { TaskStatus } from "../domain/TaskStatus";
 
 const TaskListScreen: React.FC = () => {
   const { state, api } = useAppContext();
-  const { listId } = useParams();
+  const { listId } = useParams<{ listId: string }>(); // Type listId as string
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Find task list directly from state instead of maintaining separate state
+  // Find task list directly from state
   const taskList = state.taskLists.find((tl) => listId === tl.id);
 
-  // Single useEffect to handle all initial data loading
+  // Single useEffect to handle initial data loading
   useEffect(() => {
     const loadInitialData = async () => {
-      if (!listId) return;
+      if (!listId) {
+        console.error("listId is undefined");
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       try {
-        // Only fetch if we don't already have the task list
         if (!taskList) {
           await api.getTaskList(listId);
         }
-
-        // Attempt to fetch tasks - this may 404 but we'll try anyway
         try {
           await api.fetchTasks(listId);
         } catch (error) {
@@ -55,9 +56,9 @@ const TaskListScreen: React.FC = () => {
     };
 
     loadInitialData();
-  }, [listId]); // Only depend on listId
+  }, [listId, taskList, api]);
 
-  // Calculate completion percentage based on tasks
+  // Calculate completion percentage
   const completionPercentage = React.useMemo(() => {
     if (listId && state.tasks[listId]) {
       const tasks = state.tasks[listId];
@@ -70,85 +71,92 @@ const TaskListScreen: React.FC = () => {
   }, [state.tasks, listId]);
 
   const toggleStatus = (task: Task) => {
-    if (listId) {
-      const updatedTask = { ...task };
-      updatedTask.status =
-        task.status === TaskStatus.CLOSED ? TaskStatus.OPEN : TaskStatus.CLOSED;
-
-      api
-        .updateTask(listId, task.id, updatedTask)
-        .then(() => api.fetchTasks(listId));
+    if (!listId) {
+      console.error("listId is undefined");
+      return;
     }
+    const updatedTask = { ...task };
+    updatedTask.status =
+      task.status === TaskStatus.CLOSED ? TaskStatus.OPEN : TaskStatus.CLOSED;
+
+    api
+      .updateTask(listId!, task.id!, updatedTask) // Line ~83: Use non-null assertion
+      .then(() => api.fetchTasks(listId!))
+      .catch((error) => console.error("Error updating task:", error));
   };
 
   const deleteTaskList = async () => {
-    if (listId) {
+    if (!listId) {
+      console.error("listId is undefined");
+      return;
+    }
+    try {
       await api.deleteTaskList(listId);
       navigate("/");
+    } catch (error) {
+      console.error("Error deleting task list:", error);
     }
   };
 
   const tableRows = () => {
-    if (null != listId && null != state.tasks[listId]) {
-      return state.tasks[listId].map((task) => (
-        <TableRow key={task.id} className="border-t">
-          <TableCell className="px-4 py-2">
-            <Checkbox
-              isSelected={TaskStatus.CLOSED == task.status}
-              onValueChange={() => toggleStatus(task)}
-              aria-label={`Mark task "${task.title}" as ${
-                TaskStatus.CLOSED == task.status ? "open" : "closed"
-              }`}
-            />
-          </TableCell>
-          <TableCell className="px-4 py-2">{task.title}</TableCell>
-          <TableCell className="px-4 py-2">{task.priority}</TableCell>
-          <TableCell className="px-4 py-2">
-            {task.dueDate && (
-              <DateInput
-                isDisabled
-                defaultValue={parseDate(
-                  new Date(task.dueDate).toISOString().split("T")[0]
-                )}
-                aria-label={`Due date for task "${task.title}"`}
-              />
-            )}
-          </TableCell>
-          <TableCell className="px-4 py-2">
-            <div className="flex space-x-2">
-              <Button
-                variant="ghost"
-                aria-label={`Edit task "${task.title}"`}
-                onClick={() =>
-                  navigate(`/task-lists/${listId}/edit-task/${task.id}`)
-                }
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  // Fix: Check if listId exists before calling deleteTask
-                  if (listId) {
-                    api.deleteTask(listId, task.id);
-                  }
-                }}
-                aria-label={`Delete task "${task.title}"`}
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-            </div>
-          </TableCell>
-        </TableRow>
-      ));
-    } else {
-      // Fix: Return empty array instead of null
+    if (!listId || !state.tasks[listId]) {
       return [];
     }
+    return state.tasks[listId].map((task) => (
+      <TableRow key={task.id} className="border-t">
+        <TableCell className="px-4 py-2">
+          <Checkbox
+            isSelected={task.status === TaskStatus.CLOSED}
+            onValueChange={() => toggleStatus(task)}
+            aria-label={`Mark task "${task.title}" as ${
+              task.status === TaskStatus.CLOSED ? "open" : "closed"
+            }`}
+          />
+        </TableCell>
+        <TableCell className="px-4 py-2">{task.title}</TableCell>
+        <TableCell className="px-4 py-2">{task.priority}</TableCell>
+        <TableCell className="px-4 py-2">
+          {task.dueDate && (
+            <DateInput
+              isDisabled
+              defaultValue={parseDate(
+                new Date(task.dueDate).toISOString().split("T")[0]
+              )}
+              aria-label={`Due date for task "${task.title}"`}
+            />
+          )}
+        </TableCell>
+        <TableCell className="px-4 py-2">
+          <div className="flex space-x-2">
+            <Button
+              variant="ghost"
+              aria-label={`Edit task "${task.title}"`}
+              onClick={() => navigate(`/task-lists/${listId}/edit-task/${task.id}`)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (!listId) {
+                  console.error("listId is undefined");
+                  return;
+                }
+                api.deleteTask(listId!, task.id!) // Line ~145: Use non-null assertion
+                  .catch((error) => console.error("Error deleting task:", error));
+              }}
+              aria-label={`Delete task "${task.title}"`}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    ));
   };
 
   if (isLoading) {
-    return <Spinner />; // Or your preferred loading indicator
+    return <Spinner />;
   }
 
   return (
@@ -171,10 +179,11 @@ const TaskListScreen: React.FC = () => {
             variant="ghost"
             aria-label={`Edit task list`}
             onClick={() => {
-              // Fix: Check if listId exists before navigating
-              if (listId) {
-                navigate(`/edit-task-list/${listId}`);
+              if (!listId) {
+                console.error("listId is undefined");
+                return;
               }
+              navigate(`/edit-task-list/${listId}`);
             }}
           >
             <Edit className="h-4 w-4" />
@@ -189,10 +198,11 @@ const TaskListScreen: React.FC = () => {
       />
       <Button
         onClick={() => {
-          // Fix: Check if listId exists before navigating
-          if (listId) {
-            navigate(`/task-lists/${listId}/new-task`);
+          if (!listId) {
+            console.error("listId is undefined");
+            return;
           }
+          navigate(`/task-lists/${listId}/new-task`);
         }}
         aria-label="Add new task"
         className="mb-4 w-full"
