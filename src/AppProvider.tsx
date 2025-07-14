@@ -36,7 +36,7 @@ const UPDATE_TASK = "UPDATE_TASK";
 const DELETE_TASK = "DELETE_TASK";
 
 // API Base URL - Fixed for Vite
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://tasks-backend-wium.onrender.com/';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('Full URL:', `${API_BASE_URL}/api/task-lists`);
